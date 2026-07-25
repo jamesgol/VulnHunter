@@ -193,6 +193,15 @@ async def run_verify(
         return _EXIT_INFRA_FAILURE
     host = next(iter(hosts))
 
+    expected_host = config.github.host
+    if host != expected_host:
+        logger.error(
+            "Issue host %r does not match configured github.host %r",
+            host,
+            expected_host
+        )
+        return _EXIT_INFRA_FAILURE
+
     verify_ssl = resolve_verify(config.tls)
     async with make_client(scan_token, verify_ssl=verify_ssl) as client:
         try:
