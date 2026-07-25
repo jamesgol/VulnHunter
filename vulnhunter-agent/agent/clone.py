@@ -117,6 +117,7 @@ def shallow_clone(
         # owns. Absolute git path resolved at module load (kills B607).
         result = subprocess.run(  # nosec B603
             [_GIT_EXECUTABLE, "clone", "--progress", "--depth", "1", "--", effective_url, str(target)],
+            capture_output=True,
             text=True,
             timeout=timeout_seconds,
             env=env,
