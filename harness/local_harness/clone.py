@@ -72,7 +72,7 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
         )
         if init.returncode == 0 and remote.returncode == 0:
             result = subprocess.run(
-                ["git", "fetch", "--depth=1", "origin", commit_hash],
+                ["git", "fetch", "--depth=1", "--", "origin", commit_hash],
                 capture_output=True, text=True, timeout=CLONE_TIMEOUT, cwd=target_dir,
             )
             if result.returncode == 0:
