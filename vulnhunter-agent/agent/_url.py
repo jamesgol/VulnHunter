@@ -23,6 +23,9 @@ _QUERY_TOKEN_RE = re.compile(r"(?i)([?&](?:access_token|token)=)([^&\s]+)")
 _RAW_TOKEN_RE = re.compile(
     r"(ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|sk-ant-)[A-Za-z0-9_-]+"
 )
+_FORM_SECRET_RE = re.compile(
+    r"(?i)(client_secret\s*[=:]\s*)[^\s,}&\"']+"
+)
 
 
 def redact(text: str) -> str:
@@ -42,6 +45,7 @@ def redact(text: str) -> str:
     s = _BEARER_RE.sub(r"\1***", s)
     s = _QUERY_TOKEN_RE.sub(r"\1***", s)
     s = _RAW_TOKEN_RE.sub(r"\1***", s)
+    s = _FORM_SECRET_RE.sub(r"\1***", s)
     # Residual risk (VULN-012, CWE-532): redaction is pattern-based over
     # enumerated token formats; a novel/unknown secret format not in the pass
     # list above would still pass through to the audit stream.
