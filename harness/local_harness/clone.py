@@ -1,10 +1,21 @@
 """Clone repositories at specific commit hashes for benchmarking."""
 
 import os
+import re
 import shutil
 import subprocess
 
 from .config import CLONE_BASE_DIR, CLONE_TIMEOUT
+
+_COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def _reject_option_like(value, what):
+    """Refuse a value that git would parse as an option (leading '-')."""
+    if value.startswith("-"):
+        raise RuntimeError(
+            f"refusing {what} that looks like a git option: {value!r}"
+        )
 
 
 def parse_source_url(source_code_url):
@@ -55,6 +66,11 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
         else:
             print(f"  [clone] Removing clone at wrong commit: {target_dir}")
             shutil.rmtree(target_dir)
+
+    _reject_option_like(repo_url, "repo URL")
+    _reject_option_like(commit_hash, "commit hash")
+    if not _COMMIT_SHA_RE.match(commit_hash):
+        raise ValueError(f"commit must be a 7-40 char hex SHA, got {commit_hash!r}")
 
     os.makedirs(CLONE_BASE_DIR, exist_ok=True)
 
