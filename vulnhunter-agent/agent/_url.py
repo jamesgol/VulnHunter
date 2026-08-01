@@ -24,7 +24,7 @@ _RAW_TOKEN_RE = re.compile(
     r"(ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|sk-ant-)[A-Za-z0-9_-]+"
 )
 _FORM_SECRET_RE = re.compile(
-    r"(?i)(client_secret\s*[=:]\s*)[^\s,}&\"']+"
+    r"(?i)(client[_-]?secret\"?\s*[=:]\s*)[\"']?[^\s,}&\"']+[\"']?"
 )
 
 

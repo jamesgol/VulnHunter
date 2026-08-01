@@ -5,6 +5,8 @@ audit content, but only rewrites basic-auth URLs. It must also redact bearer
 headers, access_token query params, and raw token prefixes.
 """
 
+import pytest
+
 from agent._url import redact
 
 
@@ -36,6 +38,27 @@ def test_raw_token_prefixes_redacted_prefix_preserved():
         out = redact(f"leaked token {prefix}{secret} in log")
         assert secret not in out, prefix
         assert prefix in out, f"prefix {prefix} should be preserved for triage"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "client_secret=SUPERSECRET&grant_type=x",
+        "client_secret: SUPERSECRET",
+        "CLIENT_SECRET=SUPERSECRET",
+        '{"client_secret": "SUPERSECRET"}',
+        '{"client_secret":"SUPERSECRET"}',
+        'client_secret = "SUPERSECRET"',
+        "client_secret='SUPERSECRET'",
+        "client-secret=SUPERSECRET",
+        "clientSecret=SUPERSECRET",
+    ],
+)
+def test_client_secret_redacted(text):
+    out = redact(text)
+    assert "SUPERSECRET" not in out
+    assert "***" in out
+    assert redact(out) == out  # idempotent
 
 
 def test_benign_text_unchanged():
