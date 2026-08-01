@@ -90,7 +90,7 @@ def test_clone_at_commit_fast_fetch_success(monkeypatch, tmp_path):
     monkeypatch.setattr(clone.subprocess, "run", fake_run)
     result_dir, err = clone.clone_at_commit("url", "abcdef12", target)
     assert err is None
-    assert ["git", "fetch", "--depth=1", "origin", "abcdef12"] in calls
+    assert ["git", "fetch", "--depth=1", "--", "origin", "abcdef12"] in calls
 
 
 def test_clone_at_commit_fast_fetch_timeout_then_full_clone(monkeypatch, tmp_path):

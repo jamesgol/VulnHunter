@@ -93,7 +93,7 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
     print(f"  [clone] Fast fetch failed, falling back to full clone ...")
     try:
         result = subprocess.run(
-            ["git", "clone", repo_url, target_dir],
+            ["git", "clone", "--", repo_url, target_dir],
             capture_output=True, text=True, timeout=CLONE_TIMEOUT,
         )
         if result.returncode != 0:
@@ -101,7 +101,7 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
             return (target_dir, error)
 
         checkout = subprocess.run(
-            ["git", "checkout", commit_hash],
+            ["git", "checkout", "--", commit_hash],
             capture_output=True, text=True, timeout=30, cwd=target_dir,
         )
         if checkout.returncode != 0:
