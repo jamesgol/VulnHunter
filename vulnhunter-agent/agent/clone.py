@@ -111,12 +111,12 @@ def shallow_clone(
     if _GIT_EXECUTABLE is None:
         raise RuntimeError("git not on PATH; cannot clone")
     try:
-        # nosec B603 — argv is statically constructed ("clone --progress
-        # --depth 1 --"); effective_url comes from the agent's own URL
+        # nosec B603 — argv is statically constructed ("clone --depth 1
+        # --"); effective_url comes from the agent's own URL
         # validation + token injection; target is a Path the agent
         # owns. Absolute git path resolved at module load (kills B607).
         result = subprocess.run(  # nosec B603
-            [_GIT_EXECUTABLE, "clone", "--progress", "--depth", "1", "--", effective_url, str(target)],
+            [_GIT_EXECUTABLE, "clone", "--depth", "1", "--", effective_url, str(target)],
             capture_output=True,
             text=True,
             timeout=timeout_seconds,
@@ -133,8 +133,8 @@ def shallow_clone(
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
         raise RuntimeError(
-            f"git clone failed (exit {result.returncode}) for {redact(repo_url)}; "
-            "see git output above"
+            f"git clone failed (exit {result.returncode}) for {redact(repo_url)}: "
+            f"{redact(result.stderr.strip())}"
         )
 
     # Strip the token from the remote URL stored in .git/config. Without
