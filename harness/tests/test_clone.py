@@ -67,7 +67,7 @@ def test_clone_at_commit_reuse_existing(monkeypatch, tmp_path):
     target = str(tmp_path / "clone")
     monkeypatch.setattr(clone.os.path, "isdir", lambda p: True)
     monkeypatch.setattr(clone, "is_at_commit", lambda d, c: True)
-    result_dir, err = clone.clone_at_commit("url", "abc", target)
+    result_dir, err = clone.clone_at_commit("url", "abcdef12", target)
     assert result_dir == target and err is None
 
 

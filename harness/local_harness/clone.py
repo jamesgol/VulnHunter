@@ -7,15 +7,8 @@ import subprocess
 
 from .config import CLONE_BASE_DIR, CLONE_TIMEOUT
 
-_COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+_COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
 
-
-def _reject_option_like(value, what):
-    """Refuse a value that git would parse as an option (leading '-')."""
-    if value.startswith("-"):
-        raise RuntimeError(
-            f"refusing {what} that looks like a git option: {value!r}"
-        )
 
 
 def parse_source_url(source_code_url):
@@ -59,6 +52,13 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
 
     Returns (target_dir, error_msg|None).
     """
+    if repo_url.startswith("-"):
+        return (target_dir, f"refusing repo URL that looks like a git option: {repo_url!r}")
+    if commit_hash.startswith("-"):
+        return (target_dir, f"refusing commit hash that looks like a git option: {commit_hash!r}")
+    if not _COMMIT_SHA_RE.match(commit_hash):
+        return (target_dir, f"commit must be a 7-40 char hex SHA, got {commit_hash!r}")
+
     if os.path.isdir(target_dir):
         if is_at_commit(target_dir, commit_hash):
             print(f"  [clone] Reusing existing clone at correct commit: {target_dir}")
@@ -66,11 +66,6 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
         else:
             print(f"  [clone] Removing clone at wrong commit: {target_dir}")
             shutil.rmtree(target_dir)
-
-    _reject_option_like(repo_url, "repo URL")
-    _reject_option_like(commit_hash, "commit hash")
-    if not _COMMIT_SHA_RE.match(commit_hash):
-        raise ValueError(f"commit must be a 7-40 char hex SHA, got {commit_hash!r}")
 
     os.makedirs(CLONE_BASE_DIR, exist_ok=True)
 
@@ -117,7 +112,7 @@ def clone_at_commit(repo_url, commit_hash, target_dir):
             return (target_dir, error)
 
         checkout = subprocess.run(
-            ["git", "checkout", "--", commit_hash],
+            ["git", "checkout", commit_hash, "--"],
             capture_output=True, text=True, timeout=30, cwd=target_dir,
         )
         if checkout.returncode != 0:
