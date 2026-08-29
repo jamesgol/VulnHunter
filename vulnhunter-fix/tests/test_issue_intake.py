@@ -126,7 +126,7 @@ class TestExtractMarkers:
         body = (
             "<!-- vulnfix-key: abcdef0123456789 -->\n"
             "<!-- vulnhunt-finding-id: VULN-7 -->\n"
-            "<!-- vulnhunt-results-dir: r -->\n"
+            "<!-- vulnhunt-results-dir: r_VULNHUNT_RESULTS_2026 -->\n"
         )
         with pytest.raises(MarkerExtractionError):
             extract_markers(body)
@@ -135,7 +135,7 @@ class TestExtractMarkers:
         body = (
             "<!-- vulnfix-key: notenoughh -->\n"
             "<!-- vulnhunt-finding-id: VULN-001 -->\n"
-            "<!-- vulnhunt-results-dir: r -->\n"
+            "<!-- vulnhunt-results-dir: r_VULNHUNT_RESULTS_2026 -->\n"
         )
         with pytest.raises(MarkerExtractionError):
             extract_markers(body)
