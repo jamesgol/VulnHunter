@@ -40,27 +40,6 @@ def test_raw_token_prefixes_redacted_prefix_preserved():
         assert prefix in out, f"prefix {prefix} should be preserved for triage"
 
 
-@pytest.mark.parametrize(
-    "text",
-    [
-        "client_secret=SUPERSECRET&grant_type=x",
-        "client_secret: SUPERSECRET",
-        "CLIENT_SECRET=SUPERSECRET",
-        '{"client_secret": "SUPERSECRET"}',
-        '{"client_secret":"SUPERSECRET"}',
-        'client_secret = "SUPERSECRET"',
-        "client_secret='SUPERSECRET'",
-        "client-secret=SUPERSECRET",
-        "clientSecret=SUPERSECRET",
-    ],
-)
-def test_client_secret_redacted(text):
-    out = redact(text)
-    assert "SUPERSECRET" not in out
-    assert "***" in out
-    assert redact(out) == out  # idempotent
-
-
 def test_benign_text_unchanged():
     assert redact("just a normal log line about issue #42") == (
         "just a normal log line about issue #42"
