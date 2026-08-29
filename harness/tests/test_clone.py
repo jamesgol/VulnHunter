@@ -214,6 +214,56 @@ def test_clone_at_commit_wrong_commit_removed(monkeypatch, tmp_path):
     assert removed["r"] == target
 
 
+def test_clone_at_commit_fallback_checkout_argv(monkeypatch, tmp_path):
+    target = str(tmp_path / "clone")
+    isdir_seq = iter([False, False])
+    monkeypatch.setattr(clone.os.path, "isdir", lambda p: next(isdir_seq, False))
+    monkeypatch.setattr(clone.os, "makedirs", lambda *a, **k: None)
+
+    calls = []
+
+    def fake_run(cmd, **k):
+        calls.append(cmd)
+        if cmd[:2] == ["git", "fetch"]:
+            return _proc(1)
+        if cmd[:2] == ["git", "clone"]:
+            return _proc(0)
+        if cmd[:2] == ["git", "checkout"]:
+            return _proc(0)
+        return _proc(0)
+
+    monkeypatch.setattr(clone.subprocess, "run", fake_run)
+    clone.clone_at_commit("url", "abcdef12", target)
+    checkout_cmds = [c for c in calls if c[:2] == ["git", "checkout"]]
+    assert checkout_cmds[-1] == ["git", "checkout", "abcdef12", "--"]
+
+
+def test_clone_at_commit_option_like_url_rejected(tmp_path):
+    target = str(tmp_path / "clone")
+    _, err = clone.clone_at_commit("--upload-pack=evil", "abcdef12", target)
+    assert "git option" in err
+
+
+def test_clone_at_commit_option_like_commit_rejected(tmp_path):
+    target = str(tmp_path / "clone")
+    _, err = clone.clone_at_commit("url", "--exec=evil", target)
+    assert "git option" in err
+
+
+def test_clone_at_commit_non_sha_rejected(tmp_path):
+    target = str(tmp_path / "clone")
+    _, err = clone.clone_at_commit("url", "not-a-sha!", target)
+    assert "hex SHA" in err
+
+
+def test_clone_at_commit_uppercase_sha_accepted(monkeypatch, tmp_path):
+    target = str(tmp_path / "clone")
+    monkeypatch.setattr(clone.os.path, "isdir", lambda p: True)
+    monkeypatch.setattr(clone, "is_at_commit", lambda d, c: True)
+    _, err = clone.clone_at_commit("url", "ABCDEF12", target)
+    assert err is None
+
+
 def test_shallow_clone_reuse(monkeypatch, tmp_path):
     target = str(tmp_path / "c")
     monkeypatch.setattr(clone.os.path, "isdir", lambda p: True)

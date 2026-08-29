@@ -10,7 +10,6 @@ from .config import CLONE_BASE_DIR, CLONE_TIMEOUT
 _COMMIT_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
 
 
-
 def parse_source_url(source_code_url):
     """Parse a benchmark source_code URL into (repo_url, commit_hash).
 
