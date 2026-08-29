@@ -123,6 +123,10 @@ def shallow_clone(
             env=env,
         )
     except subprocess.TimeoutExpired as exc:
+        # On Windows with capture_output, grandchildren (git-remote-https,
+        # index-pack) can inherit the stderr pipe and keep it open after
+        # the direct child is killed, blocking the drain. A full fix
+        # requires Popen + process-tree kill; for now, accept the caveat.
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
         raise RuntimeError(
@@ -132,10 +136,15 @@ def shallow_clone(
     if result.returncode != 0:
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
+        _stderr = " ".join((result.stderr or "").split())[-2000:]
         raise RuntimeError(
             f"git clone failed (exit {result.returncode}) for {redact(repo_url)}: "
-            f"{redact(result.stderr.strip())}"
+            f"{redact(_stderr)}"
         )
+
+    if result.stderr and result.stderr.strip():
+        _warn = " ".join(result.stderr.split())[-2000:]
+        logger.debug("git clone stderr: %s", redact(_warn))
 
     # Strip the token from the remote URL stored in .git/config. Without
     # this, any subsequent `git remote get-url`, `git config -l`, or

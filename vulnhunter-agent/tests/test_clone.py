@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -337,3 +338,43 @@ class TestShallowClone:
             "/usr/bin/git", "clone", "--depth", "1",
             "--", "https://github.com/org/myrepo", str(tmp_path / "myrepo"),
         ]
+
+    def test_stderr_bounded_in_error_message(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        long_spam = "remote: spam\n" * 500
+        fatal = "fatal: repository 'https://github.com/org/myrepo' not found"
+
+        def fake_run(cmd: list[str], **kwargs: Any) -> _FakeCompleted:
+            target = Path(cmd[-1])
+            target.mkdir(parents=True, exist_ok=True)
+            return _FakeCompleted(returncode=128, stderr=long_spam + fatal)
+
+        monkeypatch.setattr(clone_mod.subprocess, "run", fake_run)
+        with pytest.raises(RuntimeError) as exc:
+            shallow_clone("https://github.com/org/myrepo", tmp_path)
+        msg = str(exc.value)
+        assert len(msg) <= 2200
+        assert "repository" in msg
+        assert "not found" in msg
+
+    def test_success_stderr_logged(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        def fake_run(cmd: list[str], **kwargs: Any) -> _FakeCompleted:
+            target = Path(cmd[-1])
+            target.mkdir(parents=True, exist_ok=True)
+            return _FakeCompleted(
+                returncode=0,
+                stderr="warning: remote HEAD refers to nonexistent ref\n",
+            )
+
+        monkeypatch.setattr(clone_mod.subprocess, "run", fake_run)
+        with caplog.at_level(logging.DEBUG, logger="agent.clone"):
+            shallow_clone("https://github.com/org/myrepo", tmp_path)
+        assert any("remote HEAD" in r.message for r in caplog.records)
